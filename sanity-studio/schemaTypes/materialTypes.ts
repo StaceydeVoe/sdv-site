@@ -1,10 +1,8 @@
 import {createElement} from 'react'
 import {defineArrayMember, defineField, defineType} from 'sanity'
 import {MaterialEntryPreviewMedia} from '../components/MaterialEntryPreviewMedia'
-import {MaterialIconInput} from '../components/MaterialIconInput'
 import {MaterialKeyInput} from '../components/MaterialKeyInput'
 import {DEFAULT_MATERIAL_ENTRIES} from './materialDefaults'
-import {MATERIAL_ICON_OPTIONS} from './materialIconOptions'
 
 export const SITE_MATERIALS_DOC_ID = 'siteMaterials'
 
@@ -24,7 +22,7 @@ export const siteMaterialsType = defineType({
       name: 'entries',
       title: 'Material types',
       description:
-        'Define material types for the site. Edit display names and pick an icon for each. Projects choose from this list for home icons and project materials.',
+        'Define material types for the site. Upload an SVG icon for each. Projects choose from this list for home icons and project materials. If no SVG is uploaded, the site uses the built-in icon for that ID (when one exists).',
       type: 'array',
       initialValue: DEFAULT_MATERIAL_ENTRIES,
       validation: (Rule) =>
@@ -67,24 +65,31 @@ export const siteMaterialsType = defineType({
               validation: (Rule) => Rule.required(),
             }),
             defineField({
-              name: 'icon',
-              title: 'Icon',
-              type: 'string',
-              components: {
-                input: MaterialIconInput,
+              name: 'iconSvg',
+              title: 'Icon (SVG)',
+              description:
+                'Upload an SVG. Prefer a simple 24×24 (or square) line/fill icon. Leave empty to use the built-in icon for this ID, if available.',
+              type: 'file',
+              options: {
+                accept: 'image/svg+xml,.svg',
               },
-              validation: (Rule) => Rule.required(),
             }),
           ],
           preview: {
-            select: {title: 'label', subtitle: 'key', icon: 'icon'},
-            prepare({title, subtitle, icon}) {
-              const iconLabel =
-                MATERIAL_ICON_OPTIONS.find((o) => o.value === icon)?.title || icon || ''
+            select: {
+              title: 'label',
+              subtitle: 'key',
+              iconUrl: 'iconSvg.asset->url',
+              key: 'key',
+            },
+            prepare({title, subtitle, iconUrl, key}) {
               return {
                 title: title || subtitle || 'Material',
-                subtitle: [subtitle, iconLabel].filter(Boolean).join(' · '),
-                media: createElement(MaterialEntryPreviewMedia, {icon}),
+                subtitle: subtitle || '',
+                media: createElement(MaterialEntryPreviewMedia, {
+                  iconUrl: iconUrl ? String(iconUrl) : '',
+                  iconKey: key ? String(key) : '',
+                }),
               }
             },
           },

@@ -6,7 +6,6 @@ export function buildDefaultMaterialEntries() {
     _key: m.key,
     key: m.key,
     label: m.label,
-    icon: m.key,
   }))
 }
 

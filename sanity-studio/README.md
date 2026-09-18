@@ -123,7 +123,8 @@ After the client owns their Sanity project, update `projectId` and `dataset` in 
 ## Developer notes
 
 - Schema types live in `schemaTypes/`.
-- Custom inputs: `components/MaterialIconInput.tsx`, `MaterialKeyInput.tsx`, etc.
+- Custom inputs: `components/MaterialKeyInput.tsx`, `MaterialKeySelect.tsx`, etc.
+- Material icons: upload SVGs in **Materials**; built-in fallbacks live in `site/icons/`.
 - `data/materials.json` — default material catalog for schema; live catalog is edited in Sanity **Materials**.
 - `docs/recovery.md` — backup and restore (Sanity dataset export/import).
 - Do not commit `node_modules/`, `dist/`, `backups/`, or `.env`.

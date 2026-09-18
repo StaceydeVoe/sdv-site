@@ -182,13 +182,18 @@
     }
     host.dataset.bound = '1';
 
+    var view = document.querySelector('.view--home');
+    var materialsOpen = !!(view && view.classList.contains('is-materials-open'));
+
     var html =
       '' +
       '<div class="home-material-meta">' +
-      '  <div class="home-material-title">Materials</div>' +
+      '  <button type="button" class="home-material-toggle" id="home-material-toggle" aria-expanded="' +
+      (materialsOpen ? 'true' : 'false') +
+      '" aria-controls="home-material-row">Materials</button>' +
       '  <div class="home-material-status" aria-live="polite"></div>' +
       '</div>' +
-      '<div class="home-material-row" role="group" aria-label="Filter by material">';
+      '<div class="home-material-row" id="home-material-row" role="group" aria-label="Filter by material">';
     data.all.forEach(function (m) {
       html +=
         '<button type="button" class="home-material-btn" data-material-key="' +
@@ -203,6 +208,13 @@
     });
     html += '</div>';
     host.innerHTML = html;
+
+    function setMaterialsOpen(next) {
+      var open = !!next;
+      if (view) view.classList.toggle('is-materials-open', open);
+      var toggle = host.querySelector('.home-material-toggle');
+      if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
 
     host.addEventListener('mouseover', function (e) {
       var t = e.target;
@@ -238,6 +250,12 @@
 
     host.addEventListener('click', function (e) {
       var t = e.target;
+      var toggle = t && t.closest ? t.closest('.home-material-toggle') : null;
+      if (toggle) {
+        var open = view && view.classList.contains('is-materials-open');
+        setMaterialsOpen(!open);
+        return;
+      }
       var btn = t && t.closest ? t.closest('.home-material-btn') : null;
       if (!btn) return;
       var key = btn.dataset.materialKey;
@@ -247,6 +265,7 @@
       rerender();
     });
 
+    setMaterialsOpen(materialsOpen);
     rerender();
   }
 
@@ -265,6 +284,29 @@
     }
   }
 
+  function initHomeSplash() {
+    var view = document.querySelector('.view--home');
+    var enter = document.getElementById('home-splash-enter');
+    if (!view || !enter) return;
+    if (enter.dataset.bound === '1') return;
+    enter.dataset.bound = '1';
+
+    // Always show splash on home load (no visit memory).
+    view.classList.add('is-splash');
+    view.classList.remove('is-info-shelved', 'is-info-sdv-visible');
+    delete view.dataset.infoShelved;
+
+    function dismissSplash() {
+      view.classList.remove('is-splash');
+      view.dataset.infoShelved = '1';
+      view.classList.add('is-info-shelved', 'is-info-sdv-visible');
+    }
+
+    enter.addEventListener('click', function () {
+      dismissSplash();
+    });
+  }
+
   function initHomeInfoToggle() {
     var view = document.querySelector('.view--home');
     var btn = document.getElementById('home-info-btn');
@@ -273,23 +315,16 @@
     if (btn.dataset.bound === '1') return;
     btn.dataset.bound = '1';
 
-    // Once info opens, project names stay hidden and the SDV mark remains (desktop).
-    var INFO_PANEL_MS = 360;
-    if (view.dataset.infoShelved === '1') {
-      view.classList.add('is-info-shelved', 'is-info-sdv-visible');
-    }
-
     function setOpen(next) {
       var open = !!next;
       view.classList.toggle('is-info-open', open);
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       panel.setAttribute('aria-hidden', open ? 'false' : 'true');
 
+      // SDV is revealed when leaving the splash; keep that state if INFO opens later.
       if (open && view.dataset.infoShelved !== '1') {
         view.dataset.infoShelved = '1';
-        window.setTimeout(function () {
-          view.classList.add('is-info-shelved', 'is-info-sdv-visible');
-        }, INFO_PANEL_MS);
+        view.classList.add('is-info-shelved', 'is-info-sdv-visible');
       }
     }
 
@@ -302,7 +337,7 @@
   }
 
   /**
-   * Bio/CV filter under INFO. Mirrors the materials filter: a status line
+   * Bio/CV/Credits filter under INFO. Mirrors the materials filter: a status line
    * ("None selected" / comma-separated labels, "Filter: X" on hover) plus
    * toggle buttons that show/hide the matching info sections. Defaults to Bio
    * and persists the selection to localStorage.
@@ -316,7 +351,9 @@
     var SECTIONS = [
       { key: 'bio', label: 'Bio', el: 'home-info-bio' },
       { key: 'cv', label: 'CV', el: 'home-info-cv' },
+      { key: 'credits', label: 'Credits', el: 'home-info-credits' },
     ];
+    var ALLOWED = { bio: 1, cv: 1, credits: 1 };
     var storageKey = 'sdv.homeInfo.selected';
     var statusEl = host.querySelector('.home-info-status');
 
@@ -329,7 +366,7 @@
         if (Array.isArray(parsed)) {
           hasStored = true;
           parsed.forEach(function (k) {
-            if (k === 'bio' || k === 'cv') selected.add(String(k));
+            if (ALLOWED[k]) selected.add(String(k));
           });
         }
       }
@@ -1700,6 +1737,7 @@
   /* --- Boot --- */
 
   document.addEventListener('DOMContentLoaded', function () {
+    initHomeSplash();
     initHomeInfoToggle();
     initHomeInfoFilter();
     renderHomeMaterialToggle();

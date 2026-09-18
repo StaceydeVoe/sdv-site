@@ -105,7 +105,7 @@ In [sanity.io/manage](https://sanity.io/manage) → your project → **API** →
 
 - `http://localhost:3000`
 - `http://127.0.0.1:3000`
-- Your production site URL (`https://sdv-site.pages.dev`, plus any custom domain once configured)
+- Your production site URL (`https://www.stacey-devoe.com`, plus `https://sdv-site.pages.dev` if still used)
 
 Enable **Allow credentials** for each origin. Without CORS, the browser blocks API requests and the site falls back to offline content.
 
@@ -134,6 +134,31 @@ Workflow: **Backup Sanity dataset** (`.github/workflows/backup-sanity-dataset.ym
 **One-time setup:** GitHub repo → **Settings → Secrets → Actions** → add `SANITY_AUTH_TOKEN` (Sanity **Viewer** token from [sanity.io/manage](https://sanity.io/manage) → API → Tokens). Paste the token only — no quotes, no spaces, no trailing newline.
 
 Download backups from the workflow run’s **Artifacts** section (retained 30 days). Store important exports elsewhere if you need longer retention.
+
+### What’s in backups
+
+A Sanity export is a **content snapshot**, not a dump of deployment secrets.
+
+**Included**
+
+| Contents | When |
+|----------|------|
+| All documents in the `production` dataset | Every backup |
+| Draft documents (`drafts.*` ids), if any exist in that dataset | Every backup |
+| Image and font files | Weekly schedule and manual runs with **Include assets** enabled |
+
+Documents cover projects, home page config, bio/CV (Info), typography, materials catalog, and related CMS fields — essentially what the live site loads from Sanity.
+
+**Not included**
+
+- `SANITY_AUTH_TOKEN` or other API keys
+- GitHub, Cloudflare, or hosting credentials
+- Studio source code or site JavaScript/CSS
+
+**Privacy and access**
+
+- Treat backups as **client content** (bio/CV text, project copy, artwork when assets are included). They are not public on the internet by default, but anyone with **read access to the GitHub repo** can download workflow artifacts.
+- For long-term storage, copy exports to a secure location you control; GitHub only keeps artifacts for 30 days.
 
 ### Manual backup (local)
 
@@ -202,7 +227,7 @@ Cloudflare Pages settings (**Settings → Builds & deployments**):
 - **Build output directory:** `site`
 - `site/_worker.js` handles `/project/*` and `/immersive/*` routing.
 
-Add the live URL to Sanity CORS (see above): `https://sdv-site.pages.dev`, plus any custom domain once configured. Path resolution at the domain root is automatic via `site/js/sdv-shared.js`.
+Add the live URL to Sanity CORS (see above): `https://www.stacey-devoe.com`, `https://sdv-site.pages.dev`, plus apex/`www` variants as needed. Path resolution at the domain root is automatic via `site/js/sdv-shared.js`.
 
 For Studio **Presentation** preview against the live site, redeploy hosted Studio after config changes:
 
@@ -211,7 +236,7 @@ cd sanity-studio
 npm run deploy
 ```
 
-Hosted Studio previews `https://sdv-site.pages.dev` by default (`sanity.config.ts`). Local `npm run dev` previews `http://127.0.0.1:3000` automatically. Override with `SANITY_STUDIO_PREVIEW_ORIGIN` when testing a custom domain.
+Hosted Studio previews `https://www.stacey-devoe.com` by default (`sanity.config.ts`). Local `npm run dev` previews `http://127.0.0.1:3000` automatically. Override with `SANITY_STUDIO_PREVIEW_ORIGIN` if needed.
 
 ## Do not delete
 

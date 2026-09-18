@@ -17,7 +17,7 @@
   --font-strong: var(--font);
   --font-light: var(--font);
   /* Optional per-page overrides from Sanity (see content-loader.js). */
-  --font-home-hero: var(--font-strong);
+  --font-home-splash: var(--font-strong);
   --font-home-nav: var(--font-strong);
   --font-home-bio: var(--font-prose);
   --font-home-cv: var(--font-prose);
@@ -28,6 +28,8 @@
   --font-immersive-nav: var(--font-strong);
   --inset: 20pt;
   --abstraction-margin: 48pt;
+  /* Shared height for home material icon chips and Bio/CV chips. */
+  --home-chip-size: 28px;
 }
 
 /* --- Reset & base --- */
@@ -100,6 +102,41 @@ img {
 
 .home-sdv-mark {
   display: none;
+}
+
+/* Quiet top-center notice; sits between MATERIALS and INFO without stealing clicks.
+   Above the INFO panel so it stays readable when the panel is open. Opaque --bg
+   padding masks the vertical center line behind the letters. */
+.home-construction {
+  position: absolute;
+  top: var(--gap);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+  margin: 0;
+  padding: 0.12rem 0.55rem;
+  max-width: min(12.5rem, calc(100% - 7.5rem));
+  text-align: center;
+  font-family: var(--font-prose), var(--font);
+  font-size: 0.65rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--bg);
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.home-construction[hidden] {
+  display: none !important;
+}
+
+@media (min-width: 600px) {
+  .home-construction {
+    max-width: min(14rem, calc(50% - var(--gap) * 2 - 1rem));
+    font-size: 0.68rem;
+  }
 }
 
 /* INFO mirrors the MATERIALS filter, anchored top-right instead of top-left.
@@ -175,17 +212,22 @@ img {
 }
 
 .home-info-filter-btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--home-chip-size);
   border: 1px solid var(--line);
   background: var(--bg);
   color: var(--fg);
-  padding: 2px 8px;
+  padding: 0 8px;
   cursor: pointer;
   font-family: var(--font-strong), var(--font);
   font-weight: 600;
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  line-height: 1.4;
+  line-height: 1;
 }
 
 .home-info-filter-btn:hover {
@@ -231,7 +273,13 @@ img {
   min-height: 0;
 }
 
-.home-material-title {
+.home-material-toggle {
+  border: 0;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  color: var(--fg);
   font-family: var(--font-strong), var(--font);
   font-weight: 600;
   font-size: 0.9rem;
@@ -241,7 +289,18 @@ img {
   line-height: 1.2;
 }
 
+.home-material-toggle:hover,
+.home-material-toggle[aria-expanded="true"] {
+  opacity: 1;
+}
+
+.home-material-toggle:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, .4);
+  outline-offset: 2px;
+}
+
 .home-material-status {
+  display: none;
   font-family: var(--font-prose), var(--font);
   font-size: 0.75rem;
   opacity: 0.7;
@@ -253,13 +312,27 @@ img {
 }
 
 .home-material-row {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 0.35rem;
   flex-wrap: wrap;
 }
 
+.view--home.is-materials-open .home-material-status {
+  display: block;
+}
+
+.view--home.is-materials-open .home-material-row {
+  display: flex;
+}
+
 .home-material-btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--home-chip-size);
+  height: var(--home-chip-size);
   border: 1px solid var(--line);
   background: var(--bg);
   color: var(--fg);
@@ -277,6 +350,10 @@ img {
   color: #f5f5f5;
 }
 
+.home-material-btn.is-on .home-material-icon {
+  filter: invert(1);
+}
+
 .home-material-btn:focus-visible {
   outline: 2px solid rgba(0, 0, 0, .4);
   outline-offset: 2px;
@@ -285,6 +362,14 @@ img {
 .home-material-icon {
   width: 18px;
   height: 18px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
+
+.home-material-icon--missing {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
 }
 
 .home-line {
@@ -319,84 +404,70 @@ img {
   }
 }
 
-.home-name-stacey,
-.home-name-devoe {
+/* Splash enter: desktop = centered in right half; mobile = mid top half. */
+.home-splash-enter {
+  display: none;
   position: absolute;
-  z-index: 1;
-  pointer-events: none;
-  font-family: var(--font-home-hero), var(--font);
-  font-weight: 700;
-  font-size: clamp(1.8rem, 3.2vw, 2.25rem);
-  color: var(--fg);
-  white-space: nowrap;
-  line-height: 1;
+  z-index: 6;
+  border: 0;
+  background: none;
   padding: 0;
   margin: 0;
-}
-
-html.sdv-preview .home-name-stacey,
-html.sdv-preview .home-name-devoe {
-  pointer-events: auto;
-}
-
-.home-name-stacey {
+  cursor: pointer;
+  color: var(--fg);
+  font-family: var(--font-home-splash), var(--font-strong), var(--font);
+  font-weight: 700;
+  font-size: clamp(1.8rem, 3.2vw, 2.25rem);
   letter-spacing: 0.06em;
-  margin-right: -0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-.home-name-devoe {
-  letter-spacing: 0.06em;
+.home-splash-enter:hover,
+.home-splash-enter:focus-visible {
+  opacity: 0.75;
 }
 
-/* Hero name: mobile = stacked on crosshair; desktop = one row, Stacey | de Voe. */
+.home-splash-enter:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, .4);
+  outline-offset: 4px;
+}
+
+.view--home.is-splash .home-splash-enter {
+  display: block;
+}
+
 @media (min-width: 600px) {
-
-  .home-name-stacey,
-  .home-name-devoe {
+  .home-splash-enter {
     top: 50%;
+    left: 50%;
+    width: 50%;
+    text-align: center;
     transform: translateY(-50%);
-    margin-right: 0;
-  }
-
-  .home-name-stacey {
-    right: calc(50% + 0.65rem);
-    left: auto;
-    text-align: right;
-  }
-
-  .home-name-devoe {
-    left: calc(50% + 0.65rem);
-    right: auto;
-    text-align: left;
   }
 }
 
 @media (max-width: 599px) {
-
-  .home-name-stacey,
-  .home-name-devoe {
+  .home-splash-enter {
+    top: 25%;
     left: 50%;
-    right: auto;
+    bottom: auto;
+    transform: translate(-50%, -50%);
     text-align: center;
-    margin-right: 0;
-  }
-
-  .home-name-stacey {
-    bottom: calc(50% + 0.35rem);
-    transform: translate(-50%, 0);
-  }
-
-  .home-name-devoe {
-    top: calc(50% + 0.35rem);
-    transform: translate(-50%, 0);
+    font-size: clamp(1.35rem, 7vw, 1.9rem);
   }
 }
 
-.view--home.is-info-open .home-name-stacey,
-.view--home.is-info-open .home-name-devoe,
-.view--home.is-info-shelved .home-name-stacey,
-.view--home.is-info-shelved .home-name-devoe {
-  display: none;
+/* Splash: only lines + enter name; hide home chrome and construction notice. */
+.view--home.is-splash .home-material-filter,
+.view--home.is-splash .home-info-filter,
+.view--home.is-splash .home-main,
+.view--home.is-splash .home-construction,
+.view--home.is-splash .home-info-panel,
+.view--home.is-splash .home-sdv-mark {
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 /* SDV mark appears after info panel finishes sliding in (desktop). */
@@ -504,6 +575,16 @@ html.sdv-preview .home-name-devoe {
 
 .home-info-scroll p {
   margin: 0 0 0.75rem;
+}
+
+.home-info-credits-line a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.home-info-credits-line a:hover {
+  opacity: 0.7;
 }
 
 @media (min-width: 600px) {
@@ -657,7 +738,7 @@ html.sdv-preview .home-name-devoe {
 }
 
 @media (min-width: 600px) {
-  .home-project-material-icons {
+  .view--home.is-materials-open .home-project-material-icons {
     display: inline-flex;
   }
 }
@@ -685,6 +766,12 @@ html.sdv-preview .home-name-devoe {
 .home-project:focus-visible {
   background: rgba(0, 0, 0, .9);
   color: #f5f5f5;
+}
+
+.home-project:hover .home-material-icon,
+.home-project:focus-visible .home-material-icon,
+.home-project.is-active .home-material-icon {
+  filter: invert(1);
 }
 
 .home-project.is-active {

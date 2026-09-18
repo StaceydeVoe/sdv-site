@@ -3,9 +3,9 @@ import {useEffect, useState} from 'react'
 import {set, unset, useClient, type StringInputProps} from 'sanity'
 import {MATERIAL_OPTIONS_FALLBACK} from '../schemaTypes/materialOptions'
 import {SITE_MATERIALS_DOC_ID} from '../schemaTypes/materialTypes'
-import {MaterialIconSvg} from './MaterialIconSvg'
+import {MaterialIconImg} from './MaterialIconImg'
 
-type MaterialOption = {title: string; value: string; icon?: string}
+type MaterialOption = {title: string; value: string; iconUrl?: string}
 
 export function MaterialKeySelect(props: StringInputProps) {
   const {value, onChange} = props
@@ -15,8 +15,16 @@ export function MaterialKeySelect(props: StringInputProps) {
   useEffect(() => {
     let cancelled = false
     client
-      .fetch<{entries?: Array<{key?: string; label?: string; icon?: string}>} | null>(
-        `*[_id in ["${SITE_MATERIALS_DOC_ID}", "drafts.${SITE_MATERIALS_DOC_ID}"]][0]{entries[]{key, label, icon}}`,
+      .fetch<{
+        entries?: Array<{key?: string; label?: string; iconUrl?: string}>
+      } | null>(
+        `*[_id in ["${SITE_MATERIALS_DOC_ID}", "drafts.${SITE_MATERIALS_DOC_ID}"]][0]{
+          entries[]{
+            key,
+            label,
+            "iconUrl": iconSvg.asset->url
+          }
+        }`,
       )
       .then((doc) => {
         if (cancelled) return
@@ -26,7 +34,7 @@ export function MaterialKeySelect(props: StringInputProps) {
           .map((e) => ({
             title: String(e.label || e.key).trim() || String(e.key),
             value: String(e.key),
-            icon: e.icon ? String(e.icon) : String(e.key),
+            iconUrl: e.iconUrl ? String(e.iconUrl) : '',
           }))
         if (list.length) setOptions(list)
       })
@@ -43,7 +51,11 @@ export function MaterialKeySelect(props: StringInputProps) {
     <Stack space={3}>
       {currentOption ? (
         <Flex align="center" gap={2}>
-          <MaterialIconSvg iconKey={currentOption.icon || currentOption.value} size={22} />
+          <MaterialIconImg
+            iconUrl={currentOption.iconUrl}
+            iconKey={currentOption.value}
+            size={22}
+          />
           <Text size={1}>{currentOption.title}</Text>
         </Flex>
       ) : null}

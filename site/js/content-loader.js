@@ -653,6 +653,9 @@
       cv: d.cv || '',
       bioFont: d.bioFont || null,
       cvFont: d.cvFont || null,
+      creditsText: d.creditsText != null ? d.creditsText : 'Website designed by ',
+      creditsLinkLabel: d.creditsLinkLabel != null ? d.creditsLinkLabel : 'c-host',
+      creditsUrl: d.creditsUrl || 'https://c-host.site/',
       _updatedAt: d._updatedAt || '',
     };
   }
@@ -1012,7 +1015,7 @@
     SITE_MATERIALS_DOC_ID +
     '" || _id == "drafts.' +
     SITE_MATERIALS_DOC_ID +
-    '"][0]{entries[]{key, label, icon}}';
+    '"][0]{entries[]{key, label, "iconUrl": iconSvg.asset->url}}';
 
   async function loadMaterialCatalog() {
     if (materialCatalogPromise) return materialCatalogPromise;
@@ -1044,10 +1047,11 @@
     HOME_PAGE_DOC_ID +
     '"][0]{\n' +
     '  backgroundColor,\n' +
-    '  heroLine1,\n' +
-    '  heroLine2,\n' +
+    '  splashText,\n' +
+    '  showUnderConstruction,\n' +
+    '  underConstructionMessage,\n' +
     '  ' +
-    fontRoleProjection('heroFont') + ',\n' +
+    fontRoleProjection('splashFont') + ',\n' +
     '  ' +
     fontRoleProjection('navFont') + ',\n' +
     '  entries[]{\n' +
@@ -1075,7 +1079,7 @@
       {
         slug: 'the-spontaneous-dance-falls',
         header_title: 'The Spontaneous Dance Falls',
-        home_materials: ['Glass', 'Textile', 'Metal', 'Archive', 'A/V', 'Performance'],
+        home_materials: ['Glass', 'Textile', 'Metal', 'Sound', 'Performance'],
         materials: [],
         gallery: [],
         body: [],
@@ -1093,7 +1097,7 @@
       {
         slug: 'under-the-needles-eye',
         header_title: "Under the Needle's Eye",
-        home_materials: ['Textile', 'Metal', 'Archive', 'A/V'],
+        home_materials: ['Textile', 'Metal', 'Lens', 'Moving image'],
         materials: [],
         gallery: [],
         body: [],
@@ -1111,7 +1115,7 @@
       {
         slug: 'overlocked',
         header_title: 'overlocked',
-        home_materials: ['Synthetic', 'Textile', 'Archive', 'A/V', 'Objects'],
+        home_materials: ['Textile', 'Metal', 'Objects', 'Moving image'],
         materials: [],
         gallery: [],
         body: [],
@@ -1187,28 +1191,50 @@
     return offline;
   }
 
+  function applyHomeConstructionNotice(homeDoc) {
+    var el = document.getElementById('home-construction');
+    if (!el) return;
+    var d = homeDoc || {};
+    var show = d.showUnderConstruction === true;
+    var message = String(d.underConstructionMessage || '').trim() || 'Website under construction';
+    setSanityDisplayText(el, show ? message : '', '');
+    el.hidden = !show;
+    if (isPreviewEnabled() && show) {
+      el.dataset.sanityEditTarget = '';
+    } else {
+      delete el.dataset.sanityEditTarget;
+    }
+  }
+
+  function applyHomeSplashText(homeDoc) {
+    var el = document.getElementById('home-splash-enter');
+    if (!el) return;
+    var d = homeDoc || {};
+    var raw = String(d.splashText || '').trim() || 'STACEY DE VOE';
+    var text = raw.toUpperCase();
+    setSanityDisplayText(el, text, 'STACEY DE VOE');
+    el.setAttribute('aria-label', 'Enter site: ' + text);
+    if (isPreviewEnabled()) {
+      el.dataset.sanityEditTarget = '';
+    } else {
+      delete el.dataset.sanityEditTarget;
+    }
+  }
+
   function applyHomePageSettings(homeDoc) {
     var homeView = document.querySelector('.view--home');
-    var line1 = document.getElementById('home-hero-line1');
-    var line2 = document.getElementById('home-hero-line2');
     var d = homeDoc || SDV_PREVIEW.homePageDoc || {};
-    setSanityDisplayText(line1, d.heroLine1, 'STACEY');
-    setSanityDisplayText(line2, d.heroLine2, 'DE VOE');
-    if (isPreviewEnabled()) {
-      if (line1) line1.dataset.sanityEditTarget = '';
-      if (line2) line2.dataset.sanityEditTarget = '';
-      if (line1) line1.removeAttribute('aria-hidden');
-      if (line2) line2.removeAttribute('aria-hidden');
-    }
+    applyHomeSplashText(d);
+    applyHomeConstructionNotice(d);
     if (homeView) {
       cachedHomeBackgroundColor = normalizeHexColor(d.backgroundColor) || '';
       applyPageBackground(homeView, cachedHomeBackgroundColor || DEFAULT_PAGE_BG);
     }
     setScopedTypographyConfig('home', [
       {
-        selector: '.home-name-stacey,.home-name-devoe',
-        cssVar: 'font-home-hero',
-        override: d.heroFont,
+        selector: '.home-splash-enter',
+        cssVar: 'font-home-splash',
+        override: d.splashFont,
         siteRole: 'strongUi',
       },
       {
@@ -1862,7 +1888,8 @@
   async function loadInfoLinks() {
     var bioHost = document.getElementById('home-info-bio');
     var cvHost = document.getElementById('home-info-cv');
-    if (!bioHost && !cvHost) return;
+    var creditsHost = document.getElementById('home-info-credits');
+    if (!bioHost && !cvHost && !creditsHost) return;
 
     var bioBody = '';
     var cvBody = '';
@@ -1875,7 +1902,7 @@
     } else {
       infoDoc = await sanityFetch(
         '*[_type=="info"][0]{' +
-        'bio, cv, body, _updatedAt,' +
+        'bio, cv, body, creditsText, creditsLinkLabel, creditsUrl, _updatedAt,' +
         fontRoleProjection('bioFont') + ',' +
         fontRoleProjection('cvFont') +
         '}',
@@ -1884,7 +1911,7 @@
       bioBody = normalized.bio;
       cvBody = normalized.cv;
       SDV_PREVIEW.info = normalized;
-      infoDoc = normalized;
+      infoDoc = Object.assign({}, normalized, infoDoc || {});
     }
 
     var bioHtml = Array.isArray(bioBody) && bioBody.length
@@ -1899,6 +1926,27 @@
       cvHost.innerHTML = cvHtml
         ? ('<h2 class="home-info-section__title">CV</h2>' + cvHtml)
         : '';
+    }
+    if (creditsHost) {
+      var prefix =
+        infoDoc && infoDoc.creditsText != null
+          ? String(infoDoc.creditsText)
+          : 'Website designed by ';
+      var linkLabel = String(
+        (infoDoc && infoDoc.creditsLinkLabel) || 'c-host',
+      ).trim() || 'c-host';
+      var linkUrl =
+        safeUrl((infoDoc && infoDoc.creditsUrl) || 'https://c-host.site/') ||
+        'https://c-host.site/';
+      creditsHost.innerHTML =
+        '<h2 class="home-info-section__title">Credits</h2>' +
+        '<p class="home-info-credits-line">' +
+        escapeHtml(prefix) +
+        '<a href="' +
+        escapeAttr(linkUrl) +
+        '" target="_blank" rel="noopener noreferrer">' +
+        escapeHtml(linkLabel) +
+        '</a></p>';
     }
 
     setScopedTypographyConfig('info', [
@@ -1952,6 +2000,8 @@
           if (bioHost) bioHost.innerHTML = '<p>Bio failed to load.</p>';
           var cvHost = document.getElementById('home-info-cv');
           if (cvHost) cvHost.innerHTML = '';
+          var creditsHost = document.getElementById('home-info-credits');
+          if (creditsHost) creditsHost.innerHTML = '';
         });
       }
 

@@ -45,6 +45,7 @@ export const infoType = defineType({
   fieldsets: [
     {name: 'bio', title: 'Bio', options: {collapsible: false}},
     {name: 'cv', title: 'CV', options: {collapsible: true}},
+    {name: 'credits', title: 'Credits', options: {collapsible: true, collapsed: false}},
     {name: 'bioTypography', title: 'Bio typography', options: {collapsible: true, collapsed: true}},
     {name: 'cvTypography', title: 'CV typography', options: {collapsible: true, collapsed: true}},
   ],
@@ -79,6 +80,34 @@ export const infoType = defineType({
       'Optional override for the CV section.',
       {fieldset: 'cvTypography'},
     ),
+    defineField({
+      name: 'creditsText',
+      title: 'Credits text',
+      type: 'string',
+      initialValue: 'Website designed by ',
+      description: 'Shown before the linked name (for example “Website designed by ”).',
+      fieldset: 'credits',
+    }),
+    defineField({
+      name: 'creditsLinkLabel',
+      title: 'Credits link label',
+      type: 'string',
+      initialValue: 'c-host',
+      description: 'Clickable text in the credits line.',
+      fieldset: 'credits',
+    }),
+    defineField({
+      name: 'creditsUrl',
+      title: 'Credits link URL',
+      type: 'url',
+      initialValue: 'https://c-host.site/',
+      description: 'Opens in a new tab.',
+      fieldset: 'credits',
+      validation: (Rule) =>
+        Rule.uri({allowRelative: false, scheme: ['http', 'https']}).warning(
+          'Use a full https:// URL',
+        ),
+    }),
   ],
   preview: {
     prepare() {
