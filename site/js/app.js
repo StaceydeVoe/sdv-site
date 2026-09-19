@@ -291,16 +291,47 @@
     if (enter.dataset.bound === '1') return;
     enter.dataset.bound = '1';
 
-    // Always show splash on home load (no visit memory).
-    view.classList.add('is-splash');
-    view.classList.remove('is-info-shelved', 'is-info-sdv-visible');
-    delete view.dataset.infoShelved;
+    var HOME_ENTERED_KEY = 'sdv.homeEntered';
+
+    function shouldShowSplash() {
+      try {
+        var boot = document.documentElement.getAttribute('data-sdv-splash');
+        if (boot === 'show') return true;
+        if (boot === 'skip') return false;
+        var nav =
+          typeof performance !== 'undefined' &&
+          performance.getEntriesByType &&
+          performance.getEntriesByType('navigation')[0];
+        var isReload = !!(nav && nav.type === 'reload');
+        if (!isReload && sessionStorage.getItem(HOME_ENTERED_KEY) === '1') {
+          return false;
+        }
+      } catch (e) {}
+      return true;
+    }
 
     function dismissSplash() {
+      try {
+        sessionStorage.setItem(HOME_ENTERED_KEY, '1');
+      } catch (e) {}
+      document.documentElement.setAttribute('data-sdv-splash', 'skip');
       view.classList.remove('is-splash');
       view.dataset.infoShelved = '1';
       view.classList.add('is-info-shelved', 'is-info-sdv-visible');
     }
+
+    if (!shouldShowSplash()) {
+      document.documentElement.setAttribute('data-sdv-splash', 'skip');
+      view.classList.remove('is-splash');
+      view.dataset.infoShelved = '1';
+      view.classList.add('is-info-shelved', 'is-info-sdv-visible');
+      return;
+    }
+
+    document.documentElement.setAttribute('data-sdv-splash', 'show');
+    view.classList.add('is-splash');
+    view.classList.remove('is-info-shelved', 'is-info-sdv-visible');
+    delete view.dataset.infoShelved;
 
     enter.addEventListener('click', function () {
       dismissSplash();

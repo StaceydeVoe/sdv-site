@@ -434,7 +434,8 @@ img {
   outline-offset: 4px;
 }
 
-.view--home.is-splash .home-splash-enter {
+.view--home.is-splash .home-splash-enter,
+html[data-sdv-splash="show"] .view--home .home-splash-enter {
   display: block;
 }
 
@@ -465,7 +466,13 @@ img {
 .view--home.is-splash .home-main,
 .view--home.is-splash .home-construction,
 .view--home.is-splash .home-info-panel,
-.view--home.is-splash .home-sdv-mark {
+.view--home.is-splash .home-sdv-mark,
+html[data-sdv-splash="show"] .view--home .home-material-filter,
+html[data-sdv-splash="show"] .view--home .home-info-filter,
+html[data-sdv-splash="show"] .view--home .home-main,
+html[data-sdv-splash="show"] .view--home .home-construction,
+html[data-sdv-splash="show"] .view--home .home-info-panel,
+html[data-sdv-splash="show"] .view--home .home-sdv-mark {
   visibility: hidden !important;
   pointer-events: none !important;
 }
